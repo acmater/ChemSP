@@ -1,1 +1,1 @@
-from .graph_operations import *
+from .graph_operators import *
