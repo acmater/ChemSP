@@ -9,7 +9,7 @@ lap: Computes a graph Laplacian matrix from an adjacency matrix.
 """
 import numpy as np
 
-def adj(X,metric):
+def adjacency(X,metric):
     """
     Computes the adjacency matrix given a set of molecules, X, and a particular distance metric.
     
@@ -31,7 +31,24 @@ def adj(X,metric):
     except:
         return np.array([[metric(x,y) for y in X] for x in X])
 
-def lap(adjacency):
+def degree(adjacency):
+    """
+    Computes the degree matrix given an adjacency matrix.
+
+    Parameters
+    ----------
+    adjacency : np.ndarray
+        An adjacency matrix of shape (NxN)
+    """
+    if not isinstance(adjacency,np.ndarray):
+        try: adjacency = np.array(adjacency)
+        except Exception as e:
+            return e
+    degree = np.zeros_like(adjacency)
+    np.fill_diagonal(degree, np.sum(adjacency,axis=0))
+    return degree
+
+def laplacian(adjacency):
     """
     Computes the Laplacian from a given adjacency matrix 
 
@@ -40,6 +57,8 @@ def lap(adjacency):
     adjacency : np.ndarray
         The adjacency matrix as an array.
     """
-    diag = np.zeros_like(adjacency)
-    np.fill_diagonal(diag, np.sum(adjacency,axis=0))
-    return diag - adj 
+    if not isinstance(adjacency,np.ndarray):
+        try: adjacency = np.array(adjacency)
+        except Exception as e:
+            return e
+    return degree(adjacency) - adjacency 

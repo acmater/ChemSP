@@ -4,61 +4,39 @@ Provides a suite of basic graph operations to perform on matrix representations 
 Functions
 ========
 
-adj : computes an adjacency matrix from a set of representations, X, and a metric M
-lap : computes the Laplacian matrix from an adjacency matrix
-Fourier : Returns the fourier basis (with optional eigenvalues) for a matrix representation of a graph
+fourier_basis : Returns the fourier basis (with optional eigenvalues) for a matrix representation of a graph
 gft : Performs a graph Fourier transform on a signal using the eigenbasis (output of Fourier)
 fourier_decomposition : Bundles multiple steps together, performs the GFT on a signal from the raw representations, X, similarity measure, K, and signal, S.
 """
 
 import numpy as np
+from chemsp.graphs import adjacency
 
-def adj(X,metric):
-    """
-    Computes the adjacency matrix given a set of molecules, X, and a particular distance metric.
-    
-    Parameters 
-    ----------
-    X : iterable 
-        An iterable 
-        
-    metric : func
-        A function that operates on two instances to compute their similiarty/distance
-    """
-    return np.array([[metric(x,y) for y in X] for x in X])
-
-def lap(adjacency):
-    """
-    Computes the Laplacian from a given adjacency matrix 
-    """
-    adj = np.copy(adjacency)
-    np.fill_diagonal(adj,0)
-    adj *= -1
-    np.fill_diagonal(adj,np.sum(adj,0)*-1)
-    return adj 
-
-def Fourier(arr,return_vals=False):
+def fourier_basis(gso,return_vals=False):
     """
     Computes and returns the fourier basis of a particular matrix. Assumes that the matrix is symmetric and uses np.eigh
     
     Parameters 
     ----------
-    arr : np.array, (NxN)
-        Assumed to be both square any symmetric in order to produce an orthogonal Fourier basis.
+    gso : np.array, (NxN)
+       gso stands for Graph Shift Operator, of which this method should be able to work on any.
+       Assumed to be both square any symmetric in order to produce an orthogonal Fourier basis.
         
     return_vals : bool, default=False
         Whether or not to return the eigenvalues. Defaults to false as the point of this function is to compute the Fourier basis of a symmetric matrix.
         
     Returns
     -------
-    q : np.array (NxN)
+    eigenvectors : np.array (NxN)
         Produces the eigenmatrix in which column i is the eigenvector corresponding to the ith eigenvector.
     """
-    l, q = np.linalg.eigh(arr)
+    assert np.allclose(gso, gso.T), "The provided graph shift operator is not symmetric."
+    assert gso.shape[0] == gso.shape[1], "The provided graph shift operator is not square."
+    eigenvalues, eigenvectors = np.linalg.eigh(arr)
     if return_vals:
-        return q, l
+        return eigenvectors, eigenvalues
     else:
-        return q
+        return eigenvectors
     
 def gft(fourier_basis, signal):
     """
@@ -79,11 +57,11 @@ def gft(fourier_basis, signal):
     """
     assert fourier_basis.shape[0] == signal.shape[0], "The number of eigenvectors must equal the dimension of the signal."
     
-    return fourier_basis.T @ signal
+    return fourier_basis.T @ signal # Compute the inner produce between the matrix of eigenvectors (Fourier basis) and the signal of interest.
 
 def fourier_decomposition(X, K, S):
-    r"""
-    Computes the complete Fourier projection for a given set of representations (X), similarity measure, and signal defined over the graph.
+    """
+    Computes the complete Fourier projection for a given set of representations (X), similarity measure (K), and a signal (S) defined over the graph.
     
     Parameters
     ----------
@@ -91,17 +69,17 @@ def fourier_decomposition(X, K, S):
         An array containing N molecules with their associated M dimensional representation
         
     K : func 
-        A similarity/kernel function that acts on X. It will return an X by X symmetric matrix of all possible pairwise similarities. Method must have 
+        A similarity/kernel function that acts on X. It will return an N by N symmetric matrix of all possible pairwise similarities. Method must have 
         the same compute syntax as sklearn kernels or scipy's cdist module.
         
     S : np.array(N,)
-        A signal in R^n that is going to projected onto the orthonormal eigenvases is K(X,X)
+        A N dimensional signal that is going to projected onto the orthonormal eigenbasis of K(X,X)
     
     Returns
     -------
     coeffs : np.array(N,)
         A numpy array of coefficients corresponding to the linear combination of eigenvectors required to reconstruct the signal.
     """
-    adj = K(X,X)
-    eigenvectors = Fourier(adj)
+    adj = adjacency(X, K)
+    eigenvectors = fourier_basis(adj)
     return gft(eigenvectors,S)
