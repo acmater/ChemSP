@@ -1,4 +1,15 @@
-# Graph Operations
+"""
+Provides a suite of basic graph operations to perform on matrix representations of chemical graphs.
+
+Functions
+========
+
+adj : computes an adjacency matrix from a set of representations, X, and a metric M
+lap : computes the Laplacian matrix from an adjacency matrix
+Fourier : Returns the fourier basis (with optional eigenvalues) for a matrix representation of a graph
+gft : Performs a graph Fourier transform on a signal using the eigenbasis (output of Fourier)
+fourier_decomposition : Bundles multiple steps together, performs the GFT on a signal from the raw representations, X, similarity measure, K, and signal, S.
+"""
 
 import numpy as np
 
